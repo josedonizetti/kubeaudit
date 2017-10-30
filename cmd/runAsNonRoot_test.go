@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Shopify/kubeaudit/fakeaudit"
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -11,26 +12,37 @@ func init() {
 	fakeaudit.CreateFakeDeploymentRunAsNonRoot("fakeDeploymentRANR")
 }
 
-func TestDeploymentRANR(t *testing.T) {
-	fakeDeployments := fakeaudit.GetDeployments("fakeDeploymentRANR")
-	wg.Add(1)
-	results := auditRunAsNonRoot(kubeAuditDeployments{list: fakeDeployments})
-
-	if len(results) != 3 {
-		t.Error("Test 1: Failed to catch all bad configurations")
+func runTest(t *testing.T, file string, function func(Items) []Result, errCode int) {
+	assert := assert.New(t)
+	resources, err := getKubeResourcesManifest("../fixtures/security_context_nil.yml")
+	assert.Nil(err)
+	count := len(resources)
+	wg.Add(count)
+	var results []Result
+	for _, resource := range resources {
+		current_results := function(resource)
+		for _, current_result := range current_results {
+			results = append(results, current_result)
+		}
 	}
-
+	wg.Wait()
 	for _, result := range results {
-		if result.Name == "fakeDeploymentRANR1" && result.Occurrences[0].id != ErrorSecurityContextNIL {
-			t.Error("Test 2: Failed to identify security context missing. Refer: fakeDeploymentRANR1.yml")
-		}
-
-		if result.Name == "fakeDeploymentRANR2" && result.Occurrences[0].id != ErrorRunAsNonRootNIL {
-			t.Error("Test 3: Failed to identify RunAsNonRoot was nil. Refer: fakeDeploymentRANR2.yml")
-		}
-
-		if result.Name == "fakeDeploymentRANR3" && result.Occurrences[0].id != ErrorRunAsNonRootFalse {
-			t.Error("Test 4: Failed to identify RunAsNonRoot was false. Refer: fakeDeploymentRANR3.yml")
-		}
+		assert.Equal(result.Occurrences[0].id, errCode)
 	}
+}
+
+func TestSecurityContextNIL(t *testing.T) {
+	runTest(t, "../fixtures/security_context_nil.yml", auditRunAsNonRoot, ErrorSecurityContextNIL)
+}
+
+func TestRunAsNonRootNil(t *testing.T) {
+	runTest(t, "../fixtures/run_as_non_root_nil.yml", auditRunAsNonRoot, ErrorRunAsNonRootNIL)
+}
+
+func TestRunAsNonRootFalse(t *testing.T) {
+	runTest(t, "../fixtures/run_as_non_root_false.yml", auditRunAsNonRoot, ErrorRunAsNonRootFalse)
+}
+
+func TestRunAsNonRootTrue(t *testing.T) {
+	//runTest("../fixtures/run_as_non_root_false.yml", auditRunAsNonRoot, ErrorRunAsNonRootFalse)
 }
