@@ -14,7 +14,7 @@ func init() {
 
 func runTest(t *testing.T, file string, function func(Items) []Result, errCode int) {
 	assert := assert.New(t)
-	resources, err := getKubeResourcesManifest("../fixtures/security_context_nil.yml")
+	resources, err := getKubeResourcesManifest(file)
 	assert.Nil(err)
 	count := len(resources)
 	wg.Add(count)

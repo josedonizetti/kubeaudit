@@ -1,7 +1,7 @@
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-    name: fakeDeploymentRANR4
+    name: run_as_non_root_true
     namespace: fakeDeploymentRANR
 spec:
     template:

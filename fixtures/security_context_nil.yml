@@ -1,7 +1,7 @@
 apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
-    name: fakeDeploymentRANR1
+    name: security_context_nil
     namespace: fakeDeploymentRANR
 spec:
     template:
